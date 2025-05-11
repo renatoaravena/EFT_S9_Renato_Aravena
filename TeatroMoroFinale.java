@@ -70,7 +70,6 @@ public class TeatroMoroFinale {
         }
     }
 
-
     // Metodo para comprar entradas
     private static void comprarEntradas(Scanner scanner) {
         if (asientosDisponibles == 0) {
