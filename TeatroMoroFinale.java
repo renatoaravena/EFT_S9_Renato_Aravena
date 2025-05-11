@@ -378,9 +378,9 @@ public class TeatroMoroFinale {
         if (edad >= 60){ // Tercera edad descuento de
             return 0.25;
 
-        }else if (edad >= 18 || edad >=14){// Adultos, estudiantes y mujeres
+        }else if (edad >=14){
 
-            if (genero == 2 && edad >= 18){//Mujer se le aplica directamente el descuento de 20%
+            if (genero == 2 && edad >= 18){//Mujer mayor de 18 años se le aplica directamente el descuento de 20%
                 return 0.20;
             }else {
                 while (true) {
