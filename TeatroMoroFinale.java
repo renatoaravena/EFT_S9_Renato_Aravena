@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
@@ -16,7 +15,7 @@ public class TeatroMoroFinale {
     private static final int TIEMPO_RESERVA_MINUTOS = 15; // Tiempo que dura la reserva
 
     // VARIABLES DE CONTROL
-    private static final boolean[] asientosDisponibles = new boolean[CAPACIDAD_TOTAL]; // true = disponible
+    private static int asientosDisponibles = CAPACIDAD_TOTAL;
     private static int entradasVendidas = 0;
     private static int ingresosTotales = 0;
     private static final List<String[]> ventas = new ArrayList<>(); // [nombre, rut, zona, cantidad, descuento, total]
@@ -27,13 +26,12 @@ public class TeatroMoroFinale {
     // Metodo main, es el que ejecuta el programa
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        inicializarAsientos(); // Todos los asientos disponibles al inicio
         boolean salir = false;
 
         while (!salir) {
 
             System.out.println("\n=== " + NOMBRE_TEATRO + " ===");
-            System.out.println("Asientos disponibles: " + contarAsientosDisponibles());
+            System.out.println("Asientos disponibles: " + asientosDisponibles);
             System.out.println("Reservas activas: " + reservas.size());
             System.out.println("\n=== MENÚ PRINCIPAL ===");
             System.out.println("1. Comprar entradas");
@@ -72,14 +70,10 @@ public class TeatroMoroFinale {
         }
     }
 
-    // Metodo para inicializar y contar asientos
-    private static void inicializarAsientos() {
-        Arrays.fill(asientosDisponibles, true);
-    }
 
     // Metodo para comprar entradas
     private static void comprarEntradas(Scanner scanner) {
-        if (contarAsientosDisponibles() == 0) {
+        if (asientosDisponibles == 0) {
             System.out.println("\n¡No hay asientos disponibles!");
             return;
         }
@@ -112,15 +106,6 @@ public class TeatroMoroFinale {
                 String opcion = scanner.nextLine();
                 if (opcion.equalsIgnoreCase("Si")) {
 
-                    // Actualizar asientos
-                    for (int i = 0; i < cantidad; i++) {
-                        for (int j = 0; j < CAPACIDAD_TOTAL; j++) {
-                            if (asientosDisponibles[j]) {
-                                asientosDisponibles[j] = false;
-                                break;
-                            }
-                        }
-                    }
 
                     // Registrar venta
                     String[] venta = {nombre, rut, ZONAS[zona], String.valueOf(cantidad),
@@ -128,6 +113,7 @@ public class TeatroMoroFinale {
                     ventas.add(venta);
                     entradasVendidas += cantidad;
                     ingresosTotales += total;
+                    asientosDisponibles -= cantidad;
 
                     System.out.println("\n¡Compra exitosa!");
                     imprimirBoleta(venta);
@@ -146,7 +132,7 @@ public class TeatroMoroFinale {
 
     // Metodo para reservar entradas
     private static void reservarEntradas(Scanner scanner) {
-        if (contarAsientosDisponibles() == 0) {
+        if (asientosDisponibles == 0) {
             System.out.println("¡No hay asientos disponibles para reservar!");
             return;
         }
@@ -158,14 +144,6 @@ public class TeatroMoroFinale {
         String nombre = obtenerNombre(scanner);
         String rut = validarRUT(scanner);
 
-        int asientosBloqueados = 0;
-        for (int i = 0; i < CAPACIDAD_TOTAL && asientosBloqueados < cantidad; i++) {
-            if (asientosDisponibles[i]) {
-                asientosDisponibles[i] = false;
-                asientosBloqueados++;
-            }
-        }
-
         // Registrar reserva
         reservas.add(new String[]{
                 nombre,
@@ -174,6 +152,7 @@ public class TeatroMoroFinale {
                 String.valueOf(cantidad),
         });
 
+        asientosDisponibles -= cantidad;
         System.out.println("\n¡Reserva exitosa! Tienes " + TIEMPO_RESERVA_MINUTOS +
                 " minutos para completar la compra.");
     }
@@ -211,16 +190,20 @@ public class TeatroMoroFinale {
         }
 
         // Seleccionar reserva a completar
+
         int seleccion;
         while(true){
             System.out.print("Seleccione reserva a completar (1-" + reservasUsuario.size() + "): ");
+            try {
+                seleccion = Integer.parseInt(scanner.nextLine()) - 1;
 
-            seleccion = Integer.parseInt(scanner.nextLine()) - 1;
-
-            if (seleccion < 0 || seleccion >= reservasUsuario.size()) {
-                System.out.println("Selección inválida.");
-            }else {
-                break;
+                if (seleccion < 0 || seleccion >= reservasUsuario.size()) {
+                    System.out.println("Por favor ingrese un número válido.");
+                }else {
+                    break;
+                }
+            }catch (NumberFormatException e){
+                System.out.println("Por favor ingrese un número válido.");
             }
         }
 
@@ -254,6 +237,10 @@ public class TeatroMoroFinale {
                     // Registrar como venta
                     ventas.add(venta);
 
+
+                    entradasVendidas += Integer.parseInt(reserva[3]);
+                    ingresosTotales += total;
+
                     // Eliminar reserva
                     reservas.remove(reservasUsuario.get(seleccion).intValue());
                     System.out.println("¡Compra completada con éxito!");
@@ -274,16 +261,7 @@ public class TeatroMoroFinale {
 
     // ==============METODOS AUXILIARES==================
 
-    // Metodo para contar asientos disponibles
-    private static int contarAsientosDisponibles() {
-        int count = 0;
-        for (boolean disponible : asientosDisponibles) {
-            if (disponible) count++;
-        }
-        return count;
-    }
-
-    // Metodo para validar RUT
+    // Meatodo para validar RUT
     private static String validarRUT(Scanner scanner) {
         while (true) {
             System.out.print("RUT del cliente (sin guión ni puntos): ");
@@ -320,7 +298,7 @@ public class TeatroMoroFinale {
 
     // Metodo para seleccionar cantidad de entradas
     private static int seleccionarCantidad(Scanner scanner) {
-        final int disponibles = contarAsientosDisponibles();
+        final int disponibles = asientosDisponibles;
 
         while (true) {
             System.out.print("Ingrese cantidad de entradas (1-" + disponibles + "): ");
@@ -400,9 +378,9 @@ public class TeatroMoroFinale {
         if (edad >= 60){ // Tercera edad descuento de
             return 0.25;
 
-        }else if (edad >= 18){// Adultos, estudiantes y mujeres
+        }else if (edad >= 18 || edad >=14){// Adultos, estudiantes y mujeres
 
-            if (genero == 2){//Mujer se le aplica directamente el descuento de 20%
+            if (genero == 2 && edad >= 18){//Mujer se le aplica directamente el descuento de 20%
                 return 0.20;
             }else {
                 while (true) {
@@ -423,7 +401,7 @@ public class TeatroMoroFinale {
                 }
             }
 
-        }else return 0.10; //Niños tienen un descuento del 10%
+        }else return 0.10; //Niños tienen un descuento del 10% el rango de edad es de 2 a 13 años
 
     }
 
@@ -436,7 +414,7 @@ public class TeatroMoroFinale {
                 if (zona < 1 || zona > NUM_ZONAS) {
                     System.out.println("Zona inválida. Debe estar entre 1 y " + NUM_ZONAS + ".");
                 } else {
-                    zona -= 1; // Ajustar índice para el arreglo
+                    zona -= 1;
                     return zona; // Devolver índice de zona
                 }
             } catch (NumberFormatException e) {
@@ -498,9 +476,5 @@ public class TeatroMoroFinale {
                     venta[0], venta[2], venta[3], Double.parseDouble(venta[4])*100 + "%", "$" + venta[5]);
         }
     }
-
-
-
-
 
 }
